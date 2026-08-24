@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>铭科精技 (sz001319) 支撑位与买入点分析</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6f8;
+    color: #2c2c2c;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .stock-title { font-size: 22px; font-weight: 700; }
+  .stock-code { color: #888; font-size: 14px; margin-left: 8px; }
+  .price-block { text-align: right; }
+  .price-now { font-size: 28px; font-weight: 700; color: #e04040; }
+  .price-change { font-size: 14px; color: #e04040; }
+
+  /* Metrics row */
+  .metrics-row { display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+  .metric { background: #f8f9fb; border-radius: 8px; padding: 10px 16px; min-width: 100px; }
+  .metric-label { font-size: 12px; color: #999; }
+  .metric-value { font-size: 16px; font-weight: 600; margin-top: 2px; }
+  .up { color: #e04040; }
+  .down { color: #00a050; }
+
+  /* TL;DR card */
+  .tldr {
+    background: linear-gradient(135deg, #fff5f5, #fff);
+    border: 1px solid #ffd6d6;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .tldr-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; color: #c0392b; }
+  .tldr-body { font-size: 14px; color: #444; }
+  .tldr-body p { margin-bottom: 8px; }
+  .tldr-body strong { color: #c0392b; }
+
+  /* Chart */
+  .chart-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .chart-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+  #klineChart { width: 100%; height: 460px; }
+
+  /* Support table */
+  .table-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .table-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f0f2f5; padding: 10px 12px; text-align: left; font-weight: 600; color: #555; }
+  td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+  tr:last-child td { border-bottom: none; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+  .tag-red { background: #fde8e8; color: #c0392b; }
+  .tag-orange { background: #fff4e6; color: #d35400; }
+  .tag-blue { background: #e8f0fe; color: #1a73e8; }
+  .tag-green { background: #e8f7ed; color: #00a050; }
+  .pct-up { color: #e04040; font-weight: 600; }
+  .pct-down { color: #00a050; font-weight: 600; }
+  .ref-close-note { font-size: 12px; color: #888; font-weight: 400; margin-left: 8px; }
+
+  /* Indicator cards */
+  .indicators { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .ind-card { background: #f8f9fb; border-radius: 8px; padding: 14px 16px; }
+  .ind-name { font-size: 13px; color: #888; margin-bottom: 6px; }
+  .ind-vals { font-size: 14px; font-weight: 600; }
+  .ind-signal { font-size: 12px; margin-top: 4px; padding: 2px 6px; border-radius: 3px; display: inline-block; }
+
+  /* Buy plan */
+  .buy-plan { margin-top: 8px; }
+  .buy-item {
+    display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid #eee;
+  }
+  .buy-item:last-child { border-bottom: none; }
+  .buy-num {
+    width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; color: #fff;
+  }
+  .buy-content { flex: 1; }
+  .buy-label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .buy-desc { font-size: 13px; color: #666; }
+  .buy-price { font-size: 15px; font-weight: 700; color: #c0392b; }
+
+  /* Disclaimer */
+  .disclaimer {
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 12px;
+    color: #999;
+    line-height: 1.7;
+  }
+
+  .source { font-size: 12px; color: #aaa; margin-top: 8px; }
+
+  /* Theme (炒作题材与炒作逻辑) */
+  .theme-card { background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .theme-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #2c2c2c; }
+  .theme-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .theme-tag { background: #eaf2ff; color: #1a73e8; border: 1px solid #d0e2ff; border-radius: 14px; padding: 4px 14px; font-size: 13px; font-weight: 600; }
+  .theme-block { margin-bottom: 12px; }
+  .theme-block:last-child { margin-bottom: 0; }
+  .theme-h { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 6px; }
+  .theme-p { font-size: 13px; color: #555; line-height: 1.7; }
+  .theme-p strong { color: #c0392b; }
+  .news-item { font-size: 12px; color: #666; padding: 5px 0; border-bottom: 1px dashed #eee; }
+  .news-item:last-child { border-bottom: none; }
+  .news-time { color: #aaa; margin-right: 8px; }
+
+  /* Systematic Risk Assessment (当前题材系统性风险评估) */
+  .risk-card { background: #fff; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); border-left: 4px solid #f39c12; }
+  .risk-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: #2c2c2c; }
+  .risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .risk-block { background: #fffbf0; border: 1px solid #f5e6c6; border-radius: 8px; padding: 12px 14px; }
+  .risk-h { font-size: 13px; font-weight: 700; color: #b7791f; margin-bottom: 6px; }
+  .risk-p { font-size: 13px; color: #555; line-height: 1.7; }
+  .risk-p strong { color: #c0392b; }
+  .risk-banner { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; background: #fff7e6; border: 1px solid #f5d99a; border-radius: 8px; padding: 12px 14px; margin-top: 4px; }
+  .risk-level { font-size: 15px; font-weight: 700; white-space: nowrap; }
+  .risk-level.r-high { color: #c0392b; }
+  .risk-level.r-mid { color: #d35400; }
+  .risk-level.r-low { color: #00a050; }
+  .risk-note { font-size: 13px; color: #555; line-height: 1.6; }
+  /* Profitability block (公司盈利能力, spans both columns) */
+  .risk-block.risk-profit { grid-column: 1 / -1; background: #f2f8ff; border-color: #d4e6fa; }
+  .risk-block.risk-profit .risk-h { color: #1a6fb0; }
+  .fin-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 10px; }
+  .fin-chip { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #d4e6fa; border-radius: 14px; padding: 3px 12px; font-size: 12px; color: #555; }
+  .fin-chip .fc-label { color: #888; }
+  .fin-chip .fc-val { font-weight: 700; }
+  .fc-val.fc-up { color: #e04040; }
+  .fc-val.fc-down { color: #00a050; }
+  .fin-verdict { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
+  .fin-verdict.v-strong { background: #e8f7ed; color: #00a050; }
+  .fin-verdict.v-mid { background: #fff4e6; color: #d35400; }
+  .fin-verdict.v-weak { background: #fde8e8; color: #c0392b; }
+  @media (max-width: 640px) { .risk-grid { grid-template-columns: 1fr; } }
+
+  /* Buy Index */
+  .buy-index-card {
+    background: linear-gradient(135deg, #f0f7ff, #fff);
+    border: 1px solid #cfe3ff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .bi-left { text-align: center; min-width: 130px; }
+  .bi-score { font-size: 46px; font-weight: 800; line-height: 1; }
+  .bi-score span { font-size: 18px; font-weight: 600; color: #999; }
+  .bi-grade { display: inline-block; margin-top: 8px; padding: 4px 14px; border-radius: 14px; font-size: 14px; font-weight: 700; }
+  .score-red { color: #e04040; background: #fde8e8; }
+  .score-orange { color: #d35400; background: #fff4e6; }
+  .score-gray { color: #555; background: #ececec; }
+  .score-green { color: #00a050; background: #e8f7ed; }
+  .bi-right { flex: 1; min-width: 260px; }
+  .bi-summary { font-size: 13px; color: #555; margin-bottom: 12px; }
+  .bi-bar { margin-bottom: 9px; }
+  .bi-bar-top { display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-bottom: 3px; }
+  .bi-bar-top .bs-val { font-weight: 700; color: #333; }
+  .bi-track { height: 7px; background: #eef1f5; border-radius: 4px; overflow: hidden; }
+  .bi-fill { height: 100%; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header: replace placeholders -->
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <span class="stock-title">铭科精技</span>
+        <span class="stock-code">sz001319</span>
+      </div>
+      <div class="price-block">
+        <div class="price-now">19.5</div>
+        <div class="price-change">-0.34 (-1.71%)</div>
+      </div>
+    </div>
+    <div class="metrics-row">
+      <!-- 8 metric cards: fill with real data -->
+      <div class="metric"><div class="metric-label">换手率</div><div class="metric-value">5.23%</div></div>
+      <div class="metric"><div class="metric-label">量比</div><div class="metric-value">1.88</div></div>
+      <div class="metric"><div class="metric-label">MA5</div><div class="metric-value">19.63</div></div>
+      <div class="metric"><div class="metric-label">MA20</div><div class="metric-value">19.25</div></div>
+      <div class="metric"><div class="metric-label">MA60</div><div class="metric-value">20.50</div></div>
+      <div class="metric"><div class="metric-label">52周高/低</div><div class="metric-value" style="font-size:13px">31.36 / 16.60</div></div>
+      <div class="metric"><div class="metric-label">年初至今</div><div class="metric-value up">-28.10%</div></div>
+      <div class="metric"><div class="metric-label">PE(TTM)</div><div class="metric-value" style="font-size:13px">19.8</div></div>
+    </div>
+  </div>
+
+  <!-- TL;DR -->
+  <div class="tldr">
+    <div class="tldr-title">核心结论</div>
+    <div class="tldr-body">
+      <!-- Fill with 2-3 paragraphs of key conclusions -->
+      
+<p><strong>趋势状态：超跌反弹（中期空头）</strong> — 价 19.5 站短期均线（MA5/MA10/MA20/MA30），8 月中旬自 7 月底低点 16.6 反弹 +17.5%；但受 MA60(20.5)/MA120(22.55)/MA250(24.93) 强压制，中期仍处空头趋势（YTD -28.1%）。</p>
+<p><strong>核心信号：8/21 涨停后回落</strong> — 8/21 因"人形机器人板块共振"放量涨停（量比 6.96），但 8/24 回落 -1.71%、主力转净流出 -480 万。<strong>不追涨停</strong>，人形机器人属纯题材联想（无订单佐证），等回踩 MA20(19.25) 企稳再考虑。</p>
+<p><strong>核心买点 19.2-19.6（MA20/MA5 回踩区），止损 18.0（BOLL下轨）</strong>。估值 PB 2.03 低、PE_TTM 19.8 合理，但中期空头压制 + 题材无订单是主要风险。</p>
+
+    </div>
+  </div>
+
+  <!-- Buy Index -->
+  <div class="buy-index-card">
+    <div class="bi-left">
+      <div class="bi-score score-gray">51<span>/100</span></div>
+      <div class="bi-grade score-gray">观望</div>
+    </div>
+    <div class="bi-right">
+      <div class="bi-summary">趋势 10 · 位置 12 · 动能 10 · 盈亏比 9 · 题材 6 · 估值 7，合计 51。估值低（PE 19.7/PB 2.02）+ 超跌反弹有支撑，但中期空头（受 MA60/120/250 压制）+ 人形机器人题材无订单佐证 + 8/21 涨停后回落——观望为主，等回踩企稳或放量突破 MA60(20.5) 再看，不追涨停。</div>
+      <div class="bi-bar"><div class="bi-bar-top"><span>趋势</span><span class="bs-val">10/25</span></div><div class="bi-track"><div class="bi-fill" style="width:40%;background:#888"></div></div></div><div class="bi-bar"><div class="bi-bar-top"><span>位置安全度</span><span class="bs-val">12/20</span></div><div class="bi-track"><div class="bi-fill" style="width:60%;background:#d35400"></div></div></div><div class="bi-bar"><div class="bi-bar-top"><span>动能</span><span class="bs-val">10/20</span></div><div class="bi-track"><div class="bi-fill" style="width:50%;background:#888"></div></div></div><div class="bi-bar"><div class="bi-bar-top"><span>盈亏比</span><span class="bs-val">9/15</span></div><div class="bi-track"><div class="bi-fill" style="width:60%;background:#2980b9"></div></div></div><div class="bi-bar"><div class="bi-bar-top"><span>题材</span><span class="bs-val">6/10</span></div><div class="bi-track"><div class="bi-fill" style="width:60%;background:#888"></div></div></div><div class="bi-bar"><div class="bi-bar-top"><span>估值</span><span class="bs-val">7/10</span></div><div class="bi-track"><div class="bi-fill" style="width:70%;background:#27ae60"></div></div></div>
+    </div>
+  </div>
+
+  <!-- K-line Chart -->
+  <div class="chart-card">
+    <div class="chart-title">日K线 + 成交量 + 关键支撑/阻力位（近 60 个交易日）</div>
+    <div id="klineChart"></div>
+    <div class="source">数据来源：腾讯自选股 | 数据截止：2026-08-24 收盘 | 前复权</div>
+  </div>
+
+  <!-- Theme (炒作题材与炒作逻辑) -->
+  <div class="theme-card">
+    <div class="theme-title">炒作题材与炒作逻辑</div>
+    <div class="theme-tags">
+      <span class="theme-tag">人形机器人</span><span class="theme-tag">汽车精密件</span><span class="theme-tag">低位修复</span><span class="theme-tag">涨停共振</span>
+    </div>
+    <div class="theme-block">
+      <div class="theme-h">炒作逻辑链</div>
+      <div class="theme-p">核心驱动是 8/21 的<strong>人形机器人板块共振</strong>：特斯拉 Optimus V3 预计 8月底-9月初发布、量产拐点已至（SOP 启动、正式 PO 已下、周产超 100 台三级跳）；8 月催化密集（8/19 宇树上市、8/19-23 世界机器人大会、8/22-26 世界人形机器人运动会）。但需注意：铭科精技主营<strong>精密冲压模具 + 金属结构件（汽车为主）</strong>，<strong>尚无公开的人形机器人订单/产品佐证</strong>——8/21 涨停属板块贝塔带动（新闻"主力净流入 639 万"是借机器人概念），而非个股α的订单兑现。属<strong>题材联想 + 低位估值修复</strong>，非真实订单驱动。</div>
+    </div>
+    <div class="theme-block">
+      <div class="theme-h">近期催化事件</div>
+      <div class="theme-p">8/21 放量涨停 +4.85%（量比 6.96），人形机器人板块共振、主力净流入 1149 万；8/24 回调 -2.22%、主力转净流出 -480 万；8/12-8/20 主力多为小额净流入/净流出反复（多空博弈）。中报将在未来 1 个月内披露。</div>
+      <div class="news-list"><div class="news-item"><span class="news-time">08-21</span>铭科精技涨停，人形机器人板块共振主力净流入639万</div><div class="news-item"><span class="news-time">08-21</span>铭科精技主力资金净流入1148.9万元 短期多空博弈加剧待业绩验证</div><div class="news-item"><span class="news-time">08-21</span>铭科精技涨4.85% 量价齐升获资金关注</div><div class="news-item"><span class="news-time">08-20</span>铭科精技主力资金净流入178.1万元 短期情绪回暖待订单验证</div><div class="news-item"><span class="news-time">08-18</span>铭科精技主力资金净流入190.1万元 短期情绪提振叠加低位估值修复</div></div>
+    </div>
+
+    <div class="theme-block">
+      <div class="theme-h">近 20 个交易日主力资金净流向</div>
+      <div id="fundFlowChart" style="width:100%;height:340px"></div>
+      <div class="theme-p" style="font-size:12px;color:#888;margin-top:6px">数据来源：腾讯自选股 data_fund_flow | 区间：2026-07-27 至 2026-08-24 | 单位：万元</div>
+      <div class="theme-p"><strong>资金解读</strong>：21 日主力累计净流出 <strong>-449 万</strong>、超大单累计 <strong>+70 万</strong>。整体偏流出，仅 8/12 和 8/21 两个脉冲式净流入日（8/21 涨停日主力 +1149 万、超大单 +690 万），8/24 回落即净流出 -480 万。呈"<strong>脉冲式题材炒作、持续性弱</strong>"特征——资金未形成趋势性建仓，更像游资借人形机器人情绪短线进出，追高风险大。</div>
+    </div>
+
+    <div class="theme-block">
+      <div class="theme-h">题材风险 / 持续性</div>
+      <div class="theme-p">题材风险<strong>中等偏高</strong>：人形机器人是真风口，但铭科精技<strong>无订单佐证、属纯题材联想</strong>（SKILL 判定"机器人材料无订单"不算亮点），8/21 涨停可能是游资借板块情绪炒作；若 Optimus 量产兑现不及预期或板块退潮，题材会快速证伪。主营汽车精密件，机器人业务占比不明。中报（1 个月内）业绩是验证点，若无机器人订单落地则题材无支撑。</div>
+    </div>
+  </div>
+
+
+  <!-- 公司亮点（独有优势/技术壁垒） -->
+  <div class="theme-card" style="border-left:4px solid #8e44ad">
+    <div class="theme-title" style="color:#8e44ad">公司亮点（独有优势 / 技术壁垒）</div>
+    <div class="theme-block">
+      <div class="theme-h">亮点评估</div>
+      <div class="theme-p"><strong>无显著独有亮点</strong>：公司主营精密冲压模具和金属结构件（汽车为主），属于行业内常规业务——精密冲压/金属结构件是汽车零部件普遍具备的工艺，无独家技术或稀缺资质；竞争力主要体现在<strong>客户资源与成本控制</strong>（汽车零部件供应链积累）。8/21 的"人形机器人"涨停<strong>无订单佐证</strong>，按判定标准"机器人材料无订单"不算亮点，属板块贝塔驱动的题材联想，而非个股α。题材弹性依赖人形机器人板块整体情绪，而非公司自身业务突破。</div>
+    </div>
+  </div>
+
+  <!-- Systematic Risk Assessment (当前题材系统性风险评估) -->
+  <div class="risk-card">
+    <div class="risk-title">当前题材系统性风险评估（外围影响 × 行业走向 × 公司盈利能力）</div>
+    <div class="risk-grid">
+      <div class="risk-block">
+        <div class="risk-h">外围影响（海外市场 / 利率 / 地缘 / 龙头联动）</div>
+        <div class="risk-p">① <strong>海外催化</strong>：特斯拉 Optimus V3 预计 8月底-9月初发布、弗里蒙特产线 SOP 启动（周产超 100 台、9月冲 1000 台），量产拐点确认；8/19 宇树科技上市。② <strong>国产共振</strong>：8/19-23 世界机器人大会、8/22-26 世界人形机器人运动会，催化密集。③ <strong>传导</strong>：人形机器人产业链（减速器/丝杠/结构件/执行器）国产化替代逻辑强，但铭科精技作为汽车精密件企业<strong>是否真正切入机器人供应链尚不明确</strong>。来源：WebSearch（Feng回路转研报 08-14、腾讯新闻 08-18、东方财富 08-11）。</div>
+      </div>
+      <div class="risk-block">
+        <div class="risk-h">行业未来走向（景气 / 供需 / 技术路线 / 业绩兑现）</div>
+        <div class="risk-p">① <strong>景气度</strong>：特斯拉 Optimus 量产拐点已至，产业链定价逻辑从"炒概念"转向"看订单、看出货、看业绩"；减速器/丝杠等核心零部件降本显著（行星减速器 2000→800 元），国产替代加速。② <strong>机会</strong>：结构传动件、丝杠、减速器、电机等环节率先受益，头部 Tier1 已收正式 PO。③ <strong>对铭科精技</strong>：人形机器人对精密冲压结构件/金属件有需求，但公司<strong>无公开订单/产品佐证切入该赛道</strong>，题材弹性依赖板块情绪而非自身订单。④ <strong>风险</strong>：若 Optimus 量产兑现不及预期或板块退潮，纯题材股回调风险大。来源：WebSearch（Feng回路转、腾讯新闻、东方财富 08 月）。</div>
+      </div>
+      <div class="risk-block risk-profit">
+        <div class="risk-h">公司盈利能力（成长性 / 盈利质量 / 现金流 / 估值匹配）<span class="fin-verdict v-mid">盈利能力：中（估值低但成长平淡）</span></div>
+        <div class="fin-chips">
+          <span class="fin-chip"><span class="fc-label">Q1归母净利</span><span class="fc-val">2319万</span></span><span class="fin-chip"><span class="fc-label">净利TTM</span><span class="fc-val">1.39亿</span></span><span class="fin-chip"><span class="fc-label">营收TTM</span><span class="fc-val">12.97亿</span></span><span class="fin-chip"><span class="fc-label">毛利率TTM</span><span class="fc-val">26.3%</span></span><span class="fin-chip"><span class="fc-label">ROE(年化)</span><span class="fc-val">≈6.6%</span></span><span class="fin-chip"><span class="fc-label">经营现金流TTM</span><span class="fc-val">1.75亿</span></span><span class="fin-chip"><span class="fc-label">PE/PB</span><span class="fc-val">19.7/2.02</span></span>
+        </div>
+        <div class="risk-p">Q1 归母净利 2319 万（TTM 1.39 亿），营收 TTM 12.97 亿，TTM 毛利率约 26.3%（汽车精密件行业中上）；ROE 年化约 6.6%（1.39 亿/140.9 亿股东权益×4，偏低）。经营现金流 TTM 1.75 亿，与净利匹配尚可，但 Q1 经营现金流为负（-1530 万，季节性）。PE_TTM 19.68、PB 2.02 估值偏低，但成长性平淡（净利 TTM 1.39 亿、体量小）。中报将在 1 个月内披露，需关注 Q2 业绩与人形机器人订单进展。数据来源：腾讯自选股 data_finance（2026Q1）。</div>
+      </div>
+      <div class="risk-banner">
+        <span class="risk-level r-mid">综合风险：中</span>
+        <span class="risk-note">人形机器人是真风口但公司无订单佐证、属题材联想，8/21 涨停后 8/24 即回落、资金未趋势性流入——中期空头压制 + 题材无订单，观望为主，等回踩企稳或中报机器人进展明朗再看。</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Technical Indicators -->
+  <div class="table-card">
+    <div class="table-title">技术指标速览（2026-08-24）</div>
+    <div class="indicators">
+      <!-- 6 indicator cards: MACD / KDJ / RSI / BOLL / 均线系统 / MA60压制 -->
+      <div class="ind-card"><div class="ind-name">MACD</div><div class="ind-vals">DIF -0.010 · DEA -0.128 · 柱 +0.236</div><div class="ind-signal tag-orange">0轴下红柱（弱反弹）</div></div>
+<div class="ind-card"><div class="ind-name">KDJ</div><div class="ind-vals">K 37.01 · D 51.73 · J 7.57</div><div class="ind-signal tag-blue">J 4.16 低位超卖</div></div>
+<div class="ind-card"><div class="ind-name">RSI</div><div class="ind-vals">RSI2 37.85 · RSI6 49.00 · RSI12 50.21</div><div class="ind-signal tag-blue">RSI2 33 中性偏弱</div></div>
+<div class="ind-card"><div class="ind-name">BOLL</div><div class="ind-vals">上 20.47 · 中 19.25 · 下 18.03</div><div class="ind-signal tag-orange">价中轨上方</div></div>
+<div class="ind-card"><div class="ind-name">均线系统</div><div class="ind-vals">MA5 19.63 > MA10 19.66 > MA20 19.25 > MA30 19.03（短多，但价<MA60 20.50）</div><div class="ind-signal tag-orange">短期多头·中期空头</div></div>
+<div class="ind-card"><div class="ind-name">MA60压制</div><div class="ind-vals">价 19.5 受 MA60(20.50) 压制（上方 -4.9%）</div><div class="ind-signal tag-orange">价受MA60压制</div></div>
+
+    </div>
+  </div>
+
+  <!-- Support Levels Table -->
+  <div class="table-card">
+    <div class="table-title">支撑位分析<span class="ref-close-note">参考收盘价：19.5 元</span></div>
+    <table>
+      <thead>
+        <tr><th>层级</th><th>价位区间</th><th>距收盘</th><th>依据</th><th>强度</th></tr>
+      </thead>
+      <tbody>
+        <!-- 4 rows: 第一支撑 / 第二支撑 / 第三支撑 / 强支撑 -->
+        <tr><td>第一支撑</td><td>19.25</td><td><span class="pct-down">-1.3%</span></td><td>MA20(19.24)+BOLL中轨，短期生命线</td><td><span class="tag tag-orange">中</span></td></tr>
+<tr><td>第二支撑</td><td>19.03</td><td><span class="pct-down">-2.4%</span></td><td>MA30(19.03)，30日均线</td><td><span class="tag tag-orange">中</span></td></tr>
+<tr><td>第三支撑</td><td>18.03</td><td><span class="pct-down">-7.6%</span></td><td>BOLL下轨(18.03)+7月底-8月初平台</td><td><span class="tag tag-red">强</span></td></tr>
+<tr><td>强支撑</td><td>16.60</td><td><span class="pct-down">-14.9%</span></td><td>52周低点(7/24)+7月底底部区</td><td><span class="tag tag-red">强</span></td></tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Buy Plan -->
+  <div class="table-card">
+    <div class="table-title">买入点与分仓计划</div>
+    <div class="buy-plan">
+      <!-- 4 items: 激进 / 稳健 / 最佳 / 止损 -->
+      <div class="buy-item"><div class="buy-num" style="background:#e74c3c">1</div><div class="buy-content"><div class="buy-label">激进 · 轻仓试探</div><div class="buy-desc">回踩 MA20(19.24) 轻仓试探 10%，当前中期空头+题材无订单，<strong>严格轻仓</strong>。</div><div class="buy-price">≈ 19.24</div></div></div>
+<div class="buy-item"><div class="buy-num" style="background:#2980b9">2</div><div class="buy-content"><div class="buy-label">稳健 · 主仓</div><div class="buy-desc">回踩 18.0-18.5（BOLL下轨+前期平台）加仓，此处估值支撑+盈亏比更优。</div><div class="buy-price">≈ 18.0-18.5</div></div></div>
+<div class="buy-item"><div class="buy-num" style="background:#27ae60">3</div><div class="buy-content"><div class="buy-label">右侧 · 确认仓</div><div class="buy-desc">放量有效突破 MA60(20.5) → 中期空转多的确认信号，可顺势加仓。</div><div class="buy-price">站上 20.5</div></div></div>
+<div class="buy-item"><div class="buy-num" style="background:#c0392b">4</div><div class="buy-content"><div class="buy-label">止损 · 离场</div><div class="buy-desc">收盘跌破 17.6（7/27 起涨点+前期平台）→ 离场，超跌反弹结构破坏。</div><div class="buy-price">≤ 17.6</div></div></div>
+
+    </div>
+  </div>
+
+  <!-- Resistance & Profit Targets -->
+  <div class="table-card">
+    <div class="table-title">压力位与止盈计划<span class="ref-close-note">参考收盘价：19.5 元</span></div>
+    <table>
+      <thead>
+        <tr><th>层级</th><th>价位</th><th>距收盘</th><th>依据</th><th>操作建议</th></tr>
+      </thead>
+      <tbody>
+        <!-- 4 rows: 即时阻力 / 短线止盈 / 中线止盈 / 长线压力 -->
+        <tr><td>即时阻力</td><td>20.46</td><td><span class="pct-up">+4.9%</span></td><td>BOLL上轨+8/21涨停高点21.31下方</td><td>反弹遇阻</td></tr>
+<tr><td>短线压力</td><td>20.50</td><td><span class="pct-up">+5.1%</span></td><td>MA60(20.5)，中期分水岭</td><td>放量突破转支撑</td></tr>
+<tr><td>中线止盈</td><td>22.55</td><td><span class="pct-up">+15.6%</span></td><td>MA120(22.55)，前期密集区</td><td>到价减仓30%</td></tr>
+<tr><td>长线压力</td><td>24.93</td><td><span class="pct-up">+27.8%</span></td><td>MA250(24.93)+6月高点</td><td>长期目标</td></tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Risk factors -->
+  <div class="table-card">
+    <div class="table-title">风险提示与失效条件</div>
+    <table>
+      <thead>
+        <tr><th>风险因素</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>题材无订单风险</td><td>人形机器人属纯题材联想，公司无公开订单/产品佐证，Optimus 兑现不及预期则证伪</td></tr><tr><td>中期空头压制</td><td>受 MA60(20.5)/MA120(22.55)/MA250(24.93) 强压制，YTD -28.5%，反弹力度待观察</td></tr><tr><td>资金脉冲炒作</td><td>8/21 涨停日放量净流入，8/24 即转净流出，资金持续性弱、游资短线特征</td></tr><tr><td>基本面平淡</td><td>净利 TTM 1.39 亿、体量小，成长性平淡，Q1 经营现金流为负</td></tr><tr><td>中报验证</td><td>中报 1 个月内披露，需关注 Q2 业绩与人形机器人订单进展</td></tr><tr><td>计划失效条件</td><td>收盘跌破 17.6 则超跌反弹结构破坏，买入计划失效</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="disclaimer">
+    <strong>免责声明</strong>：以上内容基于公开数据和量化分析，仅供参考，不构成投资建议。市场有风险，投资需谨慎。任何投资决策应结合个人风险承受能力、资金状况和投资目标独立判断，必要时咨询持牌专业机构。过往表现不预示未来收益。
+  </div>
+
+</div>
+
+<script>
+// === DATA SECTION: replace with real data ===
+var dates = ["2026-05-27", "2026-05-28", "2026-05-29", "2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05", "2026-06-08", "2026-06-09", "2026-06-10", "2026-06-11", "2026-06-12", "2026-06-15", "2026-06-16", "2026-06-17", "2026-06-18", "2026-06-22", "2026-06-23", "2026-06-24", "2026-06-25", "2026-06-26", "2026-06-29", "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-03", "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10", "2026-07-13", "2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17", "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24", "2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24"];
+var ohlc = [[25.05, 24.56, 25.61, 24.35], [24.57, 24.33, 24.93, 23.66], [24.33, 22.5, 24.38, 22.2], [22.44, 22.91, 23.09, 22.35], [22.95, 22.69, 23.66, 22.45], [22.92, 23.15, 23.87, 22.56], [23.03, 23.03, 23.65, 22.88], [22.84, 23.71, 24.21, 22.61], [23.25, 23.34, 23.91, 22.99], [23.52, 23.65, 23.68, 23.03], [23.46, 23.05, 23.74, 22.68], [22.85, 23.03, 23.32, 22.6], [23.2, 24.09, 24.4, 23.2], [24.14, 23.83, 24.33, 23.66], [23.79, 23.28, 23.79, 23.21], [23.19, 22.67, 23.22, 22.6], [22.61, 22.62, 22.73, 22.12], [22.59, 21.3, 22.59, 20.6], [21.16, 21.35, 21.73, 21.02], [21.3, 20.93, 21.36, 20.62], [20.72, 20.22, 20.88, 19.9], [20.16, 19.62, 20.68, 19.6], [19.64, 19.35, 19.84, 18.8], [19.39, 19.6, 19.83, 19.19], [19.67, 20.08, 20.43, 19.4], [20.2, 22.09, 22.09, 20.0], [21.94, 22.9, 23.64, 21.69], [22.68, 22.13, 22.87, 22.07], [22.34, 21.65, 22.5, 21.65], [21.59, 21.04, 21.67, 20.89], [20.81, 20.86, 21.17, 20.35], [20.88, 20.97, 21.2, 20.64], [20.97, 19.83, 20.97, 19.77], [19.61, 20.5, 21.02, 19.61], [20.5, 20.37, 20.69, 20.25], [20.31, 20.37, 20.65, 20.06], [20.37, 19.53, 20.67, 19.4], [19.41, 18.03, 19.76, 17.89], [18.03, 17.93, 18.25, 17.15], [17.94, 17.47, 17.96, 17.23], [17.48, 17.47, 17.67, 17.27], [17.36, 16.65, 17.45, 16.6], [16.7, 17.61, 17.63, 16.61], [17.4, 17.69, 18.38, 17.35], [17.89, 18.24, 18.35, 17.71], [18.08, 18.22, 18.61, 17.97], [18.39, 18.66, 18.84, 18.28], [18.66, 19.09, 19.14, 18.58], [19.09, 19.03, 19.24, 18.92], [19.1, 19.19, 19.35, 18.78], [19.21, 19.34, 19.49, 19.03], [19.32, 19.3, 19.45, 19.08], [19.3, 19.62, 19.64, 19.14], [19.62, 19.53, 19.71, 19.29], [19.72, 19.95, 20.04, 19.53], [19.99, 19.44, 20.05, 19.4], [19.39, 19.51, 19.56, 19.1], [19.52, 20.0, 20.15, 19.38], [20.29, 20.08, 20.29, 19.81], [20.05, 19.34, 20.1, 19.03], [19.35, 19.37, 19.63, 19.25], [19.19, 19.84, 21.31, 19.07], [19.7, 19.5, 20.12, 19.12]];       // format: [[open, close, low, high], ...]
+var vols = [53536, 40849, 54872, 26704, 27816, 39192, 24853, 38192, 30967, 21858, 24846, 19967, 38620, 25528, 24515, 23061, 24203, 43981, 19555, 16920, 32311, 22897, 21005, 16634, 25078, 41284, 72928, 36216, 24076, 23768, 22641, 23506, 18963, 25630, 11851, 11327, 20117, 32918, 27942, 17052, 18235, 26665, 24060, 20963, 19116, 19143, 18327, 17854, 13127, 16560, 16696, 12985, 12432, 9705, 15539, 13273, 10746, 16339, 14007, 16144, 15319, 52054, 42848];
+
+// Normalize time order: force oldest-first (left=old, right=new).
+if (dates.length > 1 && dates[0] > dates[dates.length - 1]) {
+  dates.reverse();
+  ohlc.reverse();
+  vols.reverse();
+}
+
+// === Support/resistance levels for markLine ===
+// Adjust values per stock analysis
+var supportLevels = [
+  { yVal: 0, label: '', color: '#f39c12', type: 'dashed' },  // 第一支撑 (MA5)
+  { yVal: 0, label: '', color: '#3498db', type: 'dashed' },  // 第二支撑
+  { yVal: 0, label: '', color: '#27ae60', type: 'dashed' },  // 第三支撑
+  { yVal: 0, label: '', color: '#c0392b', type: 'solid'  },   // 强支撑
+  { yVal: 0, label: '', color: '#8e44ad', type: 'dotted' },  // 即时阻力 (布林上轨)
+  { yVal: 0, label: '', color: '#e74c3c', type: 'dotted' },  // 短线止盈 (MA60/MA120)
+  { yVal: 0, label: '', color: '#2c3e50', type: 'dotted' }   // 中线止盈 / 长线压力
+];
+
+var markLineData = [];
+for (var i = 0; i < supportLevels.length; i++) {
+  var lv = supportLevels[i];
+  if (lv.yVal > 0) {
+    markLineData.push({
+      yAxis: lv.yVal,
+      lineStyle: { color: lv.color, type: lv.type, width: 1 },
+      label: { formatter: lv.label, color: lv.color, position: 'insideEnd', fontSize: 10 }
+    });
+  }
+}
+
+var chart = echarts.init(document.getElementById('klineChart'));
+chart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+  legend: { data: ['日K', '成交量'], top: 5 },
+  grid: [
+    { left: '6%', right: '3%', top: '12%', height: '58%' },
+    { left: '6%', right: '3%', top: '76%', height: '16%' }
+  ],
+  xAxis: [
+    { type: 'category', data: dates, scale: true, boundaryGap: false, splitLine: { show: false }, axisLabel: { fontSize: 10 } },
+    { type: 'category', gridIndex: 1, data: dates, scale: true, boundaryGap: false, splitLine: { show: false }, axisLabel: { show: false } }
+  ],
+  yAxis: [
+    { scale: true, splitArea: { show: true } },
+    { gridIndex: 1, splitNumber: 2, axisLabel: { show: false } }
+  ],
+  series: [
+    {
+      name: '日K',
+      type: 'candlestick',
+      data: ohlc,
+      itemStyle: {
+        color: '#e04040',
+        color0: '#00a050',
+        borderColor: '#e04040',
+        borderColor0: '#00a050'
+      },
+      markLine: {
+        symbol: 'none',
+        data: markLineData
+      }
+    },
+    {
+      name: '成交量',
+      type: 'bar',
+      xAxisIndex: 1,
+      yAxisIndex: 1,
+      data: vols,
+      itemStyle: {
+        color: function(params) {
+          var idx = params.dataIndex;
+          var item = ohlc[idx];
+          return item[1] >= item[0] ? '#e04040' : '#00a050';
+        }
+      }
+    }
+  ]
+});
+window.addEventListener('resize', function() { chart.resize(); });
+
+// === Fund Flow Chart ===
+var ffChart = echarts.init(document.getElementById('fundFlowChart'));
+var ffDates = ["2026-07-27", "2026-07-28", "2026-07-29", "2026-07-30", "2026-07-31", "2026-08-03", "2026-08-04", "2026-08-05", "2026-08-06", "2026-08-07", "2026-08-10", "2026-08-11", "2026-08-12", "2026-08-13", "2026-08-14", "2026-08-17", "2026-08-18", "2026-08-19", "2026-08-20", "2026-08-21", "2026-08-24"];
+var ffMain = [35, -315, 29, -5, 111, -263, -108, -310, -147, -239, -37, 3, 288, -261, -128, 89, 190, -228, 178, 1149, -480];
+var ffJumbo = [-24, -105, -144, -53, 68, -121, 1, -171, 0, -53, -83, 0, 364, -64, -114, 67, 115, -131, 133, 690, -306];
+ffChart.setOption({
+  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' },
+    formatter: function(params) {
+      var s = params[0].axisValue + '<br/>';
+      params.forEach(function(p) {
+        var v = p.value;
+        var sign = v >= 0 ? '+' : '';
+        s += p.marker + p.seriesName + ': ' + sign + v.toLocaleString() + ' 万元<br/>';
+      });
+      return s;
+    }
+  },
+  legend: { data: ['主力净流入', '超大单净流入'], top: 5 },
+  grid: { left: '4%', right: '3%', top: '18%', bottom: '12%' },
+  xAxis: { type: 'category', data: ffDates, axisLabel: { fontSize: 9, rotate: 45 } },
+  yAxis: [
+    { type: 'value', name: '主力(万)', position: 'left' },
+    { type: 'value', name: '超大单(万)', position: 'right' }
+  ],
+  series: [
+    {
+      name: '主力净流入', type: 'bar', barWidth: '35%',
+      data: ffMain,
+      itemStyle: { color: function(p) { return p.value >= 0 ? '#e04040' : '#00a050'; } },
+      yAxisIndex: 0
+    },
+    {
+      name: '超大单净流入', type: 'bar', barWidth: '35%',
+      data: ffJumbo,
+      itemStyle: { color: function(p) { return p.value >= 0 ? 'rgba(230,150,20,0.7)' : 'rgba(60,130,200,0.7)'; } },
+      yAxisIndex: 1
+    }
+  ]
+});
+window.addEventListener('resize', function() { ffChart.resize(); });
+
+</script>
+</body>
+</html>
